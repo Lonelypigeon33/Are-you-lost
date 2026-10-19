@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>smarrito.exe</title>
+<style>
+  :root{
+    --grey:#c0c0c0; --dark:#808080; --black:#0a0a0a; --white:#fff;
+    --blue:#000080; --blue2:#1084d0; --teal:#004848;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#000;
+    font-family:Tahoma,"MS Sans Serif",Arial,sans-serif;font-size:14px;
+    -webkit-user-select:none;user-select:none}
+  body{transition:background 3s, filter 1.5s}
+  #desktop{position:fixed;inset:0 0 34px 0;background:var(--teal);transition:background 4s;overflow:hidden}
+  body.calm #desktop{background:#6fa8a0}
+  body.invert #desktop{filter:invert(1) hue-rotate(160deg)}
+  body.calm #desktop{filter:none}
+
+  /* icone desktop */
+  .icons{position:absolute;left:10px;top:10px;display:flex;flex-direction:column;gap:18px;z-index:1}
+  .icon{width:78px;text-align:center;color:#fff;font-size:12px;cursor:pointer;text-shadow:1px 1px #000}
+  .icon span{display:block;font-size:34px;line-height:1.1}
+  .icon:active{opacity:.6}
+
+  /* finestre */
+  .win{position:absolute;background:var(--grey);padding:3px;
+    box-shadow:inset -1px -1px var(--black),inset 1px 1px var(--white),inset -2px -2px var(--dark),inset 2px 2px #dfdfdf,6px 8px 0 rgba(0,0,0,.45);
+    animation:pop .25s steps(4);}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+  .win.out{opacity:0;transition:opacity 1.5s;pointer-events:none}
+  .tb{background:linear-gradient(90deg,var(--blue),var(--blue2));color:#fff;font-weight:bold;
+    padding:3px 4px;display:flex;justify-content:space-between;align-items:center;cursor:move;touch-action:none}
+  .tb.inactive{background:linear-gradient(90deg,#808080,#b0b0b0)}
+  .tb .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .btns{display:flex;gap:2px}
+  .btn{background:var(--grey);color:#000;min-width:18px;height:16px;font-size:11px;line-height:14px;text-align:center;
+    box-shadow:inset -1px -1px var(--black),inset 1px 1px var(--white),inset -2px -2px var(--dark);cursor:pointer;padding:0 6px;font-weight:bold}
+  .btn:active{box-shadow:inset 1px 1px var(--black),inset -1px -1px var(--white),inset 2px 2px var(--dark)}
+  .body{background:#000;color:#d8d8d8;margin-top:3px;padding:22px 20px 26px;
+    box-shadow:inset 1px 1px var(--dark),inset -1px -1px var(--white),inset 2px 2px var(--black);
+    font-family:"Courier New",monospace;position:relative;overflow:hidden}
+  .body.light{background:#fff;color:#111}
+  .body.mirror .inner{transform:scaleX(-1)}
+  .big{font-family:"Times New Roman",serif;font-style:italic;font-size:clamp(46px,11vw,128px);line-height:1;
+    color:#e8e8e8;margin:.15em 0 .35em;letter-spacing:-.02em;text-shadow:2px 0 #a00,-2px 0 #0aa;animation:flick 5s infinite}
+  .phrase{font-size:clamp(20px,3.6vw,34px);line-height:1.35;margin:.2em 0 1em}
+  .lead{font-size:clamp(15px,2.2vw,20px);line-height:1.5;margin:0 0 1.2em;color:#cfcfcf}
+  a.go{color:#ff3b3b;text-decoration:underline;cursor:pointer;font-size:clamp(16px,2.6vw,22px);
+    font-family:"Courier New",monospace;-webkit-user-select:none}
+  a.go:hover{background:#ff3b3b;color:#000}
+  .body.light a.go{color:#004b9a}.body.light a.go:hover{background:#004b9a;color:#fff}
+  .body.light .big,.body.light .phrase{text-shadow:none;color:#111}
+  @keyframes flick{0%,92%,100%{opacity:1}93%{opacity:.3}94%{opacity:1}96%{opacity:.5}97%{opacity:1}}
+
+  /* effetti globali */
+  #crt{position:fixed;inset:0;pointer-events:none;z-index:9000;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px);
+    box-shadow:inset 0 0 160px rgba(0,0,0,.8)}
+  body.calm #crt{opacity:.25}
+  #noise{position:fixed;inset:0;pointer-events:none;z-index:8999;opacity:.07;mix-blend-mode:screen}
+  body.glitch #desktop{animation:shake .35s infinite}
+  @keyframes shake{0%{transform:translate(0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px) skewX(1deg)}75%{transform:translate(-2px,-1px)}100%{transform:translate(0)}}
+
+  /* barra */
+  #taskbar{position:fixed;left:0;right:0;bottom:0;height:34px;background:var(--grey);z-index:8000;display:flex;align-items:center;
+    padding:2px 3px;gap:6px;box-shadow:inset 0 2px var(--white)}
+  #start{font-weight:bold;padding:0 10px;height:26px;display:flex;align-items:center;gap:4px;cursor:pointer;background:var(--grey);
+    box-shadow:inset -1px -1px var(--black),inset 1px 1px var(--white),inset -2px -2px var(--dark)}
+  #taskarea{flex:1;font-size:12px;color:#222;overflow:hidden;white-space:nowrap}
+  #tray{height:26px;padding:0 10px;display:flex;align-items:center;gap:10px;font-size:12px;
+    box-shadow:inset 1px 1px var(--dark),inset -1px -1px var(--white)}
+  #mute{cursor:pointer}
+  #menu{position:fixed;left:3px;bottom:36px;background:var(--grey);z-index:8001;min-width:210px;display:none;padding:3px;
+    box-shadow:inset -1px -1px var(--black),inset 1px 1px var(--white),inset -2px -2px var(--dark),4px 4px 0 rgba(0,0,0,.4)}
+  #menu div{padding:9px 14px;cursor:pointer}
+  #menu div:hover{background:var(--blue);color:#fff}
+
+  /* intro */
+  #intro{position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer;
+    color:#bbb;font-family:"Courier New",monospace;text-align:center;padding:20px;transition:opacity 2s}
+  #intro p{animation:blink 1.6s infinite;font-size:clamp(14px,2.4vw,20px);line-height:1.8}
+  #intro small{display:block;color:#666;margin-top:10px}
+  @keyframes blink{50%{opacity:.15}}
+  .hide{opacity:0;pointer-events:none}
+  .err .body{background:var(--grey);color:#000;font-family:Tahoma,Arial,sans-serif;font-size:14px;padding:18px 18px 14px;display:flex;gap:14px;align-items:flex-start;
+    box-shadow:none}
+  .err .ok{margin:14px auto 0}
+</style>
+</head>
+<body>
+
+<div id="intro"><p>▌ premi per entrare ▐<small>(audio consigliato · cuffie · luci spente)</small></p></div>
+
+<div id="desktop">
+  <div class="icons">
+    <div class="icon" data-i="pc"><span>🖥️</span>Risorse del computer</div>
+    <div class="icon" data-i="bin"><span>🗑️</span>Cestino</div>
+    <div class="icon" data-i="txt"><span>📄</span>diario.txt</div>
+  </div>
+</div>
+
+<div id="menu">
+  <div data-m="a">📁 Programmi</div>
+  <div data-m="b">🕯️ Ricordi</div>
+  <div data-m="c">⏻ Arresta il sistema...</div>
+</div>
+
+<div id="taskbar">
+  <div id="start">⊞ Start</div>
+  <div id="taskarea"></div>
+  <div id="tray"><span id="mute" title="audio">🔊</span><span id="clock">--:--</span></div>
+</div>
+
+<canvas id="noise"></canvas>
+<div id="crt"></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const desktop = $('#desktop');
+  let z = 10, step = 0, wins = [];
+
+  /* ---------- testi ---------- */
+  const phrases = [
+    null,
+    "Chi ti ha detto che esistesse una strada?",
+    "Il coniglio bianco non ha mai avuto fretta. Eri tu a inseguirlo.",
+    "Ogni porta che apri è una porta che si apre su di te.",
+    "Ti svegli nella stessa stanza ogni mattina. Sei sicuro che sia la stessa stanza?",
+    "Il corridoio è rosso perché qualcuno ha dimenticato di spegnere la luce. Quel qualcuno sei tu.",
+    "Dietro lo specchio c'è un'altra stanza che ti guarda con la tua stessa domanda.",
+    "Non hai perso il senso. Il senso ti sta cercando, ma parla al contrario.",
+    "Più cammini, più la casa si allunga. Più ti fermi, più la casa respira.",
+    "Sei il sogno di qualcuno che sta cercando di ricordarsi di te.",
+    "Chi sta leggendo, e chi viene letto?",
+    "Tutte le strade portano qui. Tutte le strade partono da qui.",
+    "Ti sei perso. Ti sei perso. Ti sei perso. Tu sei."
+  ];
+  const links = ["clicca qui","e se fosse vero?","vai avanti","apri ancora","non guardare indietro","più a fondo",
+                 "continua","ancora","giù","chi sei?","ascolta","ancora un passo"];
+  // livello di distorsione per ogni frase: 0 normale, 1 parole invertite, 2 lettere invertite, 3 tutto invertito, 4 + specchio
+  const levels = [0,0,0,0,0,1,1,2,2,3,3,4,4];
+
+  function tr(t, l){
+    if(l===1) return t.split(' ').reverse().join(' ');
+    if(l===2) return t.split(' ').map(w=>[...w].reverse().join('')).join(' ');
+    if(l>=3)  return [...t].reverse().join('');
+    return t;
+  }
+
+  /* ---------- finestre ---------- */
+  function openWin({title, html, w=520, x, y, cls='', light=false, mirror=false, closable=true, track=true}){
+    const el = document.createElement('div');
+    el.className = 'win ' + cls;
+    const narrow = innerWidth < 640;
+    const width = narrow ? innerWidth - 16 : Math.min(w, innerWidth - 30);
+    el.style.width = width + 'px';
+    const maxX = Math.max(0, innerWidth - width - 8);
+    const maxY = Math.max(0, innerHeight - 34 - 240);
+    el.style.left = (narrow ? 8 : (x ?? Math.random()*maxX)) + 'px';
+    el.style.top  = (y ?? Math.random()*maxY*0.8 + 6) + 'px';
+    el.style.zIndex = ++z;
+    el.innerHTML = `<div class="tb"><span class="t">${title}</span><span class="btns"><span class="btn">_</span><span class="btn">□</span>${closable?'<span class="btn x">✕</span>':''}</span></div>
+      <div class="body ${light?'light':''} ${mirror?'mirror':''}"><div class="inner">${html}</div></div>`;
+    desktop.appendChild(el);
+    const tb = el.querySelector('.tb');
+    drag(el, tb);
+    el.addEventListener('pointerdown', () => el.style.zIndex = ++z);
+    const x_ = el.querySelector('.x');
+    if(x_) x_.addEventListener('click', () => { el.remove(); wins = wins.filter(k=>k!==el); });
+    if(track){ wins.push(el); trim(); }
+    return el;
+  }
+  function trim(){
+    while(wins.length > 4){
+      const old = wins.shift();
+      old.classList.add('out');
+      setTimeout(()=>old.remove(), 1500);
+    }
+  }
+  function drag(el, handle){
+    let sx, sy, ox, oy, on = false;
+    handle.addEventListener('pointerdown', e => {
+      if(e.target.closest('.btn')) return;
+      on = true; sx = e.clientX; sy = e.clientY; ox = el.offsetLeft; oy = el.offsetTop;
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointermove', e => {
+      if(!on) return;
+      el.style.left = (ox + e.clientX - sx) + 'px';
+      el.style.top  = (oy + e.clientY - sy) + 'px';
+    });
+    const end = () => on = false;
+    handle.addEventListener('pointerup', end); handle.addEventListener('pointercancel', end);
+  }
+
+  /* ---------- flusso principale ---------- */
+  function first(){
+    const el = openWin({
+      title:'smarrito.exe', w:980, x:20, y:14, closable:false,
+      html:`<div class="big">...ti sei perso...?</div>
+            <p class="lead">se anche tu hai smarrito la strada e non sai che senso abbia la tua esistenza,<br>sei nel posto giusto.</p>
+            <a class="go">clicca qui</a>`
+    });
+    el.querySelector('a.go').addEventListener('click', next);
+    if(innerWidth>=640) el.style.top = '14px';
+  }
+
+  function next(e){
+    step++;
+    if(step >= phrases.length){ return finale(); }
+    const lvl = levels[step];
+    setEffects(lvl);
+    const txt = tr(phrases[step], lvl);
+    const lk  = tr(links[(step-1) % links.length], lvl);
+    const names = ['porta','specchio','corridoio','stanza','sogno','eco','soglia','nebbia'];
+    const el = openWin({
+      title: `${names[step%names.length]}_${String(step).padStart(2,'0')}.exe`,
+      w: 420 + Math.random()*180, mirror: lvl>=4,
+      html:`<p class="phrase">${txt}</p><a class="go">${lk}</a>`
+    });
+    el.querySelector('a.go').addEventListener('click', next);
+    audioStep(lvl);
+    if(lvl>=2) glitchTitle(el);
+    if(step>=3) scheduleError();
+  }
+
+  function setEffects(l){
+    document.body.classList.toggle('invert', l>=3);
+    document.body.classList.toggle('glitch', l>=4);
+  }
+
+  function glitchTitle(el){
+    const t = el.querySelector('.t'), orig = t.textContent;
+    let n = 0;
+    const id = setInterval(()=>{
+      t.textContent = Math.random()<.5 ? orig : [...orig].reverse().join('');
+      if(++n>14 || !document.body.contains(el)){ clearInterval(id); t.textContent = orig; }
+    }, 160);
+  }
+
+  function finale(){
+    document.body.classList.remove('invert','glitch');
+    document.body.classList.add('calm');
+    wins.forEach(w=>{ w.classList.add('out'); setTimeout(()=>w.remove(),1500); });
+    wins = [];
+    audioCalm();
+    setTimeout(()=>{
+      const el = openWin({
+        title:'ritrovato.exe', w:640, light:true, x:undefined, y:40, closable:true, track:false,
+        html:`<div class="big" style="font-style:normal;text-shadow:none;animation:none;font-size:clamp(34px,7vw,72px)">eccoti.</div>
+              <p class="phrase" style="font-family:Georgia,serif">Non eri mai davvero perso: la strada era il modo in cui camminavi.<br><br>
+              Ritrovarsi non significa arrivare da qualche parte, ma smettere di scappare da dove si è.</p>
+              <a class="go">ricomincia da capo</a>`
+      });
+      el.style.left = Math.max(8,(innerWidth - el.offsetWidth)/2) + 'px';
+      el.style.top = Math.max(8,(innerHeight - 34 - el.offsetHeight)/2) + 'px';
+      el.querySelector('a.go').addEventListener('click', () => location.reload());
+    }, 1800);
+  }
+
+  /* ---------- errori finti ---------- */
+  const errors = [
+    "Questo programma ha eseguito un'operazione non valida. Sei ancora tu?",
+    "Impossibile trovare 'te'. Riprovare?",
+    "Memoria insufficiente: troppi ricordi aperti.",
+    "Qualcuno ha appena chiuso la porta dietro di te.",
+    "ERRORE 404: il senso non è stato trovato. Forse non è mai stato nascosto."
+  ];
+  let errT = null;
+  function scheduleError(){
+    if(errT || document.body.classList.contains('calm')) return;
+    errT = setTimeout(()=>{
+      errT = null;
+      if(document.body.classList.contains('calm')) return;
+      const el = openWin({
+        title:'Errore', w:340, cls:'err', closable:false, track:false,
+        html:`<div style="font-size:34px">⚠️</div><div>${errors[Math.floor(Math.random()*errors.length)]}<br><div class="btn ok" style="display:inline-block;height:auto;padding:5px 26px;margin-top:14px">OK</div></div>`
+      });
+      el.querySelector('.ok').addEventListener('click', ()=>el.remove());
+      scheduleError();
+    }, 14000 + Math.random()*12000);
+  }
+
+  /* ---------- icone & menu ---------- */
+  const iconTexts = {
+    pc:["Risorse del computer","Non c'è nessuno qui.<br>Prova a guardare dentro."],
+    bin:["Cestino","Contiene: 1 versione di te che non hai scelto.<br>Svuotare?"],
+    txt:["diario.txt","giorno 1: mi sono svegliato.<br>giorno 1: mi sono svegliato.<br>giorno 1: mi sono<br>giorno 1:"]
+  };
+  document.querySelectorAll('.icon').forEach(ic => ic.addEventListener('click', () => {
+    const [t, h] = iconTexts[ic.dataset.i];
+    openWin({title:t, w:340, html:`<p class="lead" style="margin:0">${h}</p>`, track:false});
+  }));
+  const menu = $('#menu');
+  $('#start').addEventListener('click', e => { e.stopPropagation(); menu.style.display = menu.style.display==='block'?'none':'block'; });
+  document.addEventListener('click', () => menu.style.display='none');
+  const menuTexts = {
+    a:["Programmi","Nessun programma installato.<br>Tutto ciò che serve è già qui."],
+    b:["Ricordi","Caricamento ricordi... 12%<br>...<br>il resto non è tuo."],
+    c:["Arresta il sistema","Impossibile arrestare il sistema.<br>Non puoi andartene prima di esserti ritrovato."]
+  };
+  menu.querySelectorAll('div').forEach(d => d.addEventListener('click', () => {
+    const [t,h] = menuTexts[d.dataset.m];
+    openWin({title:t, w:360, html:`<p class="lead" style="margin:0">${h}</p>`, track:false});
+  }));
+
+  /* ---------- orologio ---------- */
+  setInterval(()=>{
+    const d = new Date();
+    let s = d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    if(step>=4 && !document.body.classList.contains('calm') && Math.random()<.12) s = ['??:??','00:00','03:33','99:99'][Math.floor(Math.random()*4)];
+    $('#clock').textContent = s;
+  }, 1000);
+
+  /* ---------- rumore visivo ---------- */
+  const nc = $('#noise'), nx = nc.getContext('2d');
+  nc.width = 160; nc.height = 100;
+  nc.style.width = '100%'; nc.style.height = '100%';
+  setInterval(()=>{
+    const img = nx.createImageData(160,100);
+    for(let i=0;i<img.data.length;i+=4){ const v = Math.random()*255; img.data[i]=img.data[i+1]=img.data[i+2]=v; img.data[i+3]=255; }
+    nx.putImageData(img,0,0);
+  }, 90);
+
+  /* ---------- audio ---------- */
+  let ac, o1, o2, g, lp, muted = false;
+  function audioStart(){
+    try{
+      ac = new (window.AudioContext||window.webkitAudioContext)();
+      g = ac.createGain(); g.gain.value = 0;
+      lp = ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value = 260;
+      o1 = ac.createOscillator(); o2 = ac.createOscillator();
+      o1.type='sawtooth'; o2.type='sawtooth';
+      o1.frequency.value = 55; o2.frequency.value = 55.8;
+      o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(ac.destination);
+      o1.start(); o2.start();
+      g.gain.linearRampToValueAtTime(0.09, ac.currentTime+4);
+    }catch(e){}
+  }
+  function audioStep(l){
+    if(!ac||muted) return;
+    const t = ac.currentTime;
+    o2.frequency.linearRampToValueAtTime(55 + l*2.2, t+1.5);
+    lp.frequency.linearRampToValueAtTime(260 + l*140, t+1.5);
+    g.gain.linearRampToValueAtTime(0.09 + l*0.02, t+1.5);
+    blip(l);
+  }
+  function blip(l){
+    const o = ac.createOscillator(), gg = ac.createGain();
+    o.type='square'; o.frequency.value = 180 - step*8 + Math.random()*20;
+    gg.gain.setValueAtTime(0.04, ac.currentTime); gg.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime+.25);
+    o.connect(gg); gg.connect(ac.destination); o.start(); o.stop(ac.currentTime+.3);
+  }
+  function audioCalm(){
+    if(!ac) return;
+    const t = ac.currentTime;
+    o1.type='sine'; o2.type='sine';
+    o1.frequency.linearRampToValueAtTime(220, t+5);
+    o2.frequency.linearRampToValueAtTime(277.18, t+5);
+    lp.frequency.linearRampToValueAtTime(1200, t+5);
+    g.gain.linearRampToValueAtTime(muted?0:0.05, t+5);
+  }
+  $('#mute').addEventListener('click', () => {
+    muted = !muted; $('#mute').textContent = muted ? '🔇' : '🔊';
+    if(g) g.gain.value = muted ? 0 : 0.09;
+  });
+
+  /* ---------- ingresso ---------- */
+  $('#intro').addEventListener('click', () => {
+    audioStart();
+    $('#intro').classList.add('hide');
+    setTimeout(()=>$('#intro').remove(), 2100);
+    setTimeout(first, 700);
+  }, {once:true});
+})();
+</script>
+</body>
+</html>
